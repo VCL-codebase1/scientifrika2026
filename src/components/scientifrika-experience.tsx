@@ -14,11 +14,14 @@ import {
 import {
   Camera,
   Check,
+  Circle,
+  Clipboard,
   Download,
   ImagePlus,
   Instagram,
   Linkedin,
   MessageCircle,
+  PartyPopper,
   UploadCloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,6 +88,17 @@ const SHARE_PLATFORMS: SharePlatform[] = [
     getUrl: (caption) => `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(caption)}`,
   },
 ];
+
+async function copyTextToClipboard(text: string) {
+  if (!navigator.clipboard?.writeText) return false;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function downloadBlob(blob: Blob, fileName: string) {
   const blobUrl = URL.createObjectURL(blob);
@@ -321,6 +335,9 @@ export default function ScientifrikaExperience() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [experience, setExperience] = useState(TAKEAWAYS[0]);
   const [formatKey, setFormatKey] = useState<FormatKey>("instagram");
+  const [hasDownloaded, setHasDownloaded] = useState(false);
+  const [captionCopied, setCaptionCopied] = useState(false);
+  const [openedPlatform, setOpenedPlatform] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [notify, setNotify] = useState<string | null>(null);
@@ -358,6 +375,10 @@ export default function ScientifrikaExperience() {
     }
     const nextUrl = URL.createObjectURL(file);
     setPhotoUrl(nextUrl);
+    setHasDownloaded(false);
+    setCaptionCopied(false);
+    setOpenedPlatform(false);
+    showNotify("Photo locked in. Pick your takeaway and download.");
   }, [showNotify]);
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
@@ -378,6 +399,25 @@ export default function ScientifrikaExperience() {
     [experience],
   );
 
+  const flowSteps = useMemo(
+    () => [
+      { key: "upload", label: "Upload", complete: Boolean(photoUrl) },
+      { key: "download", label: "Download", complete: hasDownloaded },
+      { key: "caption", label: "Caption", complete: captionCopied },
+      { key: "post", label: "Post", complete: openedPlatform },
+    ],
+    [captionCopied, hasDownloaded, openedPlatform, photoUrl],
+  );
+
+  const completedSteps = flowSteps.filter((step) => step.complete).length;
+  const progressWidth = `${Math.min(100, (completedSteps / flowSteps.length) * 100)}%`;
+
+  const copyCaption = useCallback(async () => {
+    const copied = await copyTextToClipboard(shareCaption);
+    setCaptionCopied(copied);
+    showNotify(copied ? "Caption copied. Open a platform and paste it." : "Caption could not be copied. Select and copy it manually.");
+  }, [shareCaption, showNotify]);
+
   const downloadFrame = async () => {
     if (!photoUrl) {
       showNotify("Upload a photo first, then download your PNG.");
@@ -389,7 +429,12 @@ export default function ScientifrikaExperience() {
     try {
       const blob = await createFramePngBlob({ photoUrl, experience, format: activeFormat });
       downloadBlob(blob, `scientifrika-2026-${activeFormat.key}.png`);
-      showNotify("PNG downloaded. Open a platform below and upload it there.");
+      setHasDownloaded(true);
+      setOpenedPlatform(false);
+
+      const copied = await copyTextToClipboard(shareCaption);
+      setCaptionCopied(copied);
+      showNotify(copied ? "PNG downloaded and caption copied. Pick a platform." : "PNG downloaded. Copy the caption, then pick a platform.");
     } catch {
       showNotify("Could not download the PNG. Try replacing the photo and downloading again.");
     } finally {
@@ -545,7 +590,50 @@ export default function ScientifrikaExperience() {
 
           {/* Share */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
-            <h2 className="text-sm font-bold">Open Platform</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold">Post Flow</h2>
+              <span className={cn(
+                "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-black uppercase",
+                hasDownloaded ? "bg-primary text-white" : "bg-slate-100 text-slate-500",
+              )}>
+                {hasDownloaded ? <PartyPopper className="size-3" /> : <Circle className="size-3" />}
+                {hasDownloaded ? "Ready" : "Build"}
+              </span>
+            </div>
+
+            <div className="relative mt-4">
+              <div className="absolute left-4 right-4 top-3 h-1 rounded-full bg-slate-100" />
+              <div className="absolute left-4 top-3 h-1 rounded-full bg-primary transition-all" style={{ width: progressWidth }} />
+              <div className="relative grid grid-cols-4 gap-2">
+                {flowSteps.map((step) => (
+                  <div key={step.key} className="flex flex-col items-center gap-1">
+                    <span className={cn(
+                      "grid size-7 place-items-center rounded-full border text-[10px] font-black shadow-sm",
+                      step.complete ? "border-primary bg-primary text-white" : "border-slate-200 bg-white text-slate-400",
+                    )}>
+                      {step.complete ? <Check className="size-3.5" /> : <Circle className="size-2.5 fill-current" />}
+                    </span>
+                    <span className={cn("text-[10px] font-bold", step.complete ? "text-primary" : "text-slate-400")}>{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="line-clamp-3 text-xs font-semibold leading-5 text-slate-700">{shareCaption}</p>
+              <button
+                type="button"
+                onClick={copyCaption}
+                className={cn(
+                  "mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-black transition-all active:scale-[0.98]",
+                  captionCopied ? "bg-primary text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100",
+                )}
+              >
+                {captionCopied ? <Check className="size-3.5" /> : <Clipboard className="size-3.5" />}
+                {captionCopied ? "Caption Copied" : "Copy Caption"}
+              </button>
+            </div>
+
             <div className="mt-3 grid grid-cols-5 gap-2">
               {SHARE_PLATFORMS.map((platform) => {
                 const Icon = platform.icon;
@@ -555,9 +643,23 @@ export default function ScientifrikaExperience() {
                     href={platform.getUrl(shareCaption)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(event) => {
+                      if (!hasDownloaded) {
+                        event.preventDefault();
+                        showNotify("Download your PNG first, then open a platform.");
+                        return;
+                      }
+
+                      setOpenedPlatform(true);
+                      showNotify("Platform opened. Upload the PNG and paste your caption.");
+                    }}
                     aria-label={`Open ${platform.label} to upload your downloaded PNG`}
                     aria-busy={isExporting || undefined}
-                    className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97]"
+                    aria-disabled={!hasDownloaded}
+                    className={cn(
+                      "flex items-center justify-center rounded-xl border border-slate-200 px-2 py-2.5 shadow-sm transition-all active:scale-[0.97]",
+                      hasDownloaded ? "bg-slate-50 hover:bg-slate-100" : "bg-slate-100 opacity-55",
+                    )}
                     title={`Open ${platform.label}`}
                   >
                     <Icon className="size-4 text-slate-700" />
