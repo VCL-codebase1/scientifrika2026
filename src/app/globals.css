@@ -60,7 +60,7 @@ button, input, textarea { font: inherit; }
 }
 
 .bg-magenta, .btn-magenta {
-  background: linear-gradient(135deg, #d81b60, #7b1fa2);
+  background: linear-gradient(135deg, var(--scientifrika-magenta, #d81b60), var(--scientifrika-purple, #7b1fa2));
 }
 
 .frame-shell {
@@ -68,7 +68,7 @@ button, input, textarea { font: inherit; }
   position: relative;
   overflow: hidden;
   border-radius: 28px;
-  background: linear-gradient(135deg, rgba(216, 27, 96, 0.36), rgba(123, 31, 162, 0.2)), #111827;
+  background: linear-gradient(135deg, var(--event-frame-a, rgba(216, 27, 96, 0.36)), var(--event-frame-b, rgba(123, 31, 162, 0.2))), var(--event-bg, #111827);
   box-shadow: 0 28px 90px rgba(17, 24, 39, 0.36), 0 0 0 1px rgba(255, 255, 255, 0.14) inset;
 }
 
@@ -86,4 +86,4 @@ button, input, textarea { font: inherit; }
 .frame-quote { font-size: clamp(0.95rem, 3.6cqw, 2.7rem); }
 .frame-small { font-size: clamp(0.56rem, 1.9cqw, 1.35rem); }
 
-.range-control { accent-color: #d81b60; }
+.range-control { accent-color: var(--primary, #d81b60); }

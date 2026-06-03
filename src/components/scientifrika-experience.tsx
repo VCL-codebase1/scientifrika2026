@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
+  type CSSProperties,
   type ChangeEvent,
   type ComponentType,
   type DragEvent,
@@ -12,6 +14,8 @@ import {
   useState,
 } from "react";
 import {
+  ArrowRight,
+  CalendarDays,
   Camera,
   Check,
   Circle,
@@ -20,6 +24,7 @@ import {
   ImagePlus,
   Instagram,
   Linkedin,
+  MapPin,
   MessageCircle,
   PartyPopper,
   UploadCloud,
@@ -28,16 +33,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-const TAKEAWAYS = [
-  "Inspired by Africa's scientific future.",
-  "Connecting science, innovation, and opportunity.",
-  "Learning from Africa's research and laboratory leaders.",
-  "Exploring science without limits.",
-  "Building the future through scientific collaboration.",
-  "Advancing African innovation through research.",
-];
-
-const LOGO_SRC = "/cropped-IMG-20251009-WA0008.webp";
 const INSTAGRAM_CREATE_URL = "https://www.instagram.com/create/select/";
 
 const FORMATS = [
@@ -46,14 +41,166 @@ const FORMATS = [
   { key: "linkedin", label: "LinkedIn Square", shortLabel: "LinkedIn", width: 1080, height: 1080, icon: Linkedin },
 ] as const;
 
+const SCIENTIFRIKA_TAKEAWAYS = [
+  "Inspired by Africa's scientific future.",
+  "Connecting science, innovation, and opportunity.",
+  "Learning from Africa's research and laboratory leaders.",
+  "Exploring science without limits.",
+  "Building the future through scientific collaboration.",
+  "Advancing African innovation through research.",
+] as const;
+
+const RELIABILITY_TAKEAWAYS = [
+  "Connected with Africa's industrial innovation community.",
+  "Exploring reliability engineering and automation for Africa.",
+  "Learning how condition monitoring keeps industry moving.",
+  "Meeting leaders in instrumentation and renewable energy.",
+  "Building partnerships for safer, smarter operations.",
+  "Turning reliability insight into action.",
+] as const;
+
 type FormatKey = (typeof FORMATS)[number]["key"];
 type FrameFormat = (typeof FORMATS)[number];
+type EventKey = "scientifrika" | "reliability-africa";
 type SocialIconProps = { className?: string };
+type EventCssVars = CSSProperties & Record<`--${string}`, string>;
+
 type SharePlatform = {
   key: string;
   label: string;
   icon: ComponentType<SocialIconProps>;
   getUrl: (caption: string) => string;
+};
+
+type EventTheme = {
+  background: string;
+  pageTint: string;
+  primary: string;
+  accent: string;
+  frameStart: string;
+  frameMiddle: string;
+  frameEnd: string;
+  frameOverlayA: string;
+  frameOverlayB: string;
+  glow: string;
+  placeholderA: string;
+  placeholderB: string;
+  photoShade: string;
+};
+
+type EventConfig = {
+  key: EventKey;
+  route: string;
+  eventName: string;
+  logoSrc: string;
+  logoAlt: string;
+  chooserBody: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroBody: string;
+  takeawayPrompt: string;
+  venue: string;
+  date: string;
+  filePrefix: string;
+  footerLine: string;
+  takeaways: readonly string[];
+  caption: (experience: string) => string;
+  frame: {
+    eyebrow: string;
+    title: string;
+    titleLines: readonly string[];
+    hashtags: string;
+    placeholder: string;
+    fallbackTakeaway: string;
+  };
+  theme: EventTheme;
+};
+
+const EVENT_CONFIGS: Record<EventKey, EventConfig> = {
+  scientifrika: {
+    key: "scientifrika",
+    route: "/scientifrika",
+    eventName: "scientiFRIKA 2026",
+    logoSrc: "/cropped-IMG-20251009-WA0008.webp",
+    logoAlt: "scientiFRIKA logo",
+    chooserBody: "Science Without Limits. Africa Without Borders.",
+    heroTitle: "I Was Part of Africa's Biggest Scientific Gathering",
+    heroSubtitle: "Science Without Limits. Africa Without Borders.",
+    heroBody: "Upload your photo, pick your takeaway, and create your frame for LinkedIn, Instagram, or WhatsApp.",
+    takeawayPrompt: "What was your biggest scientiFRIKA takeaway?",
+    venue: "Africa's scientific gathering",
+    date: "2026",
+    filePrefix: "scientifrika-2026",
+    footerLine: "Science Without Limits, Africa Without Borders",
+    takeaways: SCIENTIFRIKA_TAKEAWAYS,
+    caption: (experience) =>
+      `I was part of Africa's biggest scientific gathering - scientiFRIKA 2026. ${experience} #scientiFRIKA2026 #ScienceWithoutLimits #AfricaWithoutBorders`,
+    frame: {
+      eyebrow: "SCIENTIFRIKA",
+      title: "scientiFRIKA 2026",
+      titleLines: ["Science Without Limits", "Africa Without Borders"],
+      hashtags: "#scientiFRIKA2026  #ScienceWithoutLimits  #AfricaWithoutBorders",
+      placeholder: "Your photo",
+      fallbackTakeaway: "Exploring science without limits.",
+    },
+    theme: {
+      background: "#111827",
+      pageTint: "#f8fafc",
+      primary: "#d81b60",
+      accent: "#7b1fa2",
+      frameStart: "#5a123f",
+      frameMiddle: "#111827",
+      frameEnd: "#2f174d",
+      frameOverlayA: "rgba(216, 27, 96, 0.36)",
+      frameOverlayB: "rgba(123, 31, 162, 0.2)",
+      glow: "rgba(216, 27, 96, 0.42)",
+      placeholderA: "rgba(216, 27, 96, 0.72)",
+      placeholderB: "rgba(123, 31, 162, 0.84)",
+      photoShade: "rgba(17, 24, 39, 0.34)",
+    },
+  },
+  "reliability-africa": {
+    key: "reliability-africa",
+    route: "/reliability-africa",
+    eventName: "Reliability Africa 2026",
+    logoSrc: "/cropped-rra3.webp",
+    logoAlt: "Reliability Africa logo",
+    chooserBody: "International Exhibition, Conference & Workshop.",
+    heroTitle: "I Was Part of Reliability Africa 2026",
+    heroSubtitle: "International Exhibition, Conference & Workshop.",
+    heroBody: "Upload your photo, pick your takeaway, and create your event frame for LinkedIn, Instagram, or WhatsApp.",
+    takeawayPrompt: "What was your biggest Reliability Africa takeaway?",
+    venue: "Lagos Oriental Hotel, Victoria Island",
+    date: "June 2-4, 2026",
+    filePrefix: "reliability-africa-2026",
+    footerLine: "Industrial reliability, automation, instrumentation, and renewable energy",
+    takeaways: RELIABILITY_TAKEAWAYS,
+    caption: (experience) =>
+      `I was part of Reliability Africa 2026 - Africa's industrial reliability, automation, instrumentation, and renewable energy gathering. ${experience} #ReliabilityAfrica2026 #ReliabilityEngineering #IndustrialInnovation`,
+    frame: {
+      eyebrow: "RELIABILITY AFRICA",
+      title: "Reliability Africa 2026",
+      titleLines: ["International Exhibition", "Conference & Workshop"],
+      hashtags: "#ReliabilityAfrica2026  #ReliabilityEngineering  #IndustrialInnovation",
+      placeholder: "Your photo",
+      fallbackTakeaway: "Exploring reliability engineering and automation for Africa.",
+    },
+    theme: {
+      background: "#24150f",
+      pageTint: "#fbfaf8",
+      primary: "#8b4a1f",
+      accent: "#c9792b",
+      frameStart: "#5a2c16",
+      frameMiddle: "#24150f",
+      frameEnd: "#354153",
+      frameOverlayA: "rgba(139, 74, 31, 0.42)",
+      frameOverlayB: "rgba(53, 65, 83, 0.22)",
+      glow: "rgba(201, 121, 43, 0.42)",
+      placeholderA: "rgba(201, 121, 43, 0.72)",
+      placeholderB: "rgba(53, 65, 83, 0.86)",
+      photoShade: "rgba(36, 21, 15, 0.38)",
+    },
+  },
 };
 
 const SHARE_PLATFORMS: SharePlatform[] = [
@@ -88,6 +235,19 @@ const SHARE_PLATFORMS: SharePlatform[] = [
     getUrl: (caption) => `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(caption)}`,
   },
 ];
+
+function getEventCssVars(event: EventConfig): EventCssVars {
+  return {
+    "--primary": event.theme.primary,
+    "--accent": event.theme.accent,
+    "--ring": event.theme.glow,
+    "--scientifrika-magenta": event.theme.primary,
+    "--scientifrika-purple": event.theme.accent,
+    "--event-bg": event.theme.background,
+    "--event-frame-a": event.theme.frameOverlayA,
+    "--event-frame-b": event.theme.frameOverlayB,
+  };
+}
 
 async function copyTextToClipboard(text: string) {
   if (!navigator.clipboard?.writeText) return false;
@@ -211,14 +371,16 @@ async function createFramePngBlob({
   photoUrl,
   experience,
   format,
+  event,
 }: {
   photoUrl: string;
   experience: string;
   format: FrameFormat;
+  event: EventConfig;
 }) {
   const [photo, logo] = await Promise.all([
     loadCanvasImage(photoUrl),
-    loadCanvasImage(LOGO_SRC).catch(() => null),
+    loadCanvasImage(event.logoSrc).catch(() => null),
   ]);
 
   await document.fonts.ready;
@@ -236,41 +398,42 @@ async function createFramePngBlob({
   const padding = cqw * (isTall ? 6 : 5);
   const gap = cqw * (isTall ? 4 : 3);
   const radius = cqw * 2.6;
-  const safeExperience = experience.trim() || "Exploring science without limits.";
+  const safeExperience = experience.trim() || event.frame.fallbackTakeaway;
 
   const background = ctx.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, "#5a123f");
-  background.addColorStop(0.48, "#111827");
-  background.addColorStop(1, "#2f174d");
+  background.addColorStop(0, event.theme.frameStart);
+  background.addColorStop(0.48, event.theme.frameMiddle);
+  background.addColorStop(1, event.theme.frameEnd);
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
 
   const glow = ctx.createRadialGradient(width * 0.22, height * 0.18, 0, width * 0.22, height * 0.18, width * 0.82);
-  glow.addColorStop(0, "rgba(216, 27, 96, 0.42)");
-  glow.addColorStop(1, "rgba(216, 27, 96, 0)");
+  glow.addColorStop(0, event.theme.glow);
+  glow.addColorStop(1, "rgba(255, 255, 255, 0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
 
   strokeRoundedRect(ctx, cqw * 1.1, cqw * 1.1, width - cqw * 2.2, height - cqw * 2.2, radius, "rgba(255,255,255,0.22)", Math.max(2, cqw * 0.12));
 
-  const logoSize = cqw * 9;
+  const logoHeight = cqw * 9;
+  const logoWidth = event.key === "reliability-africa" ? cqw * 18 : cqw * 9;
   const headerY = padding;
-  const headerHeight = logoSize;
+  const headerHeight = logoHeight;
   const smallFont = Math.min(cqw * 1.9, 22);
   const copyFont = Math.min(cqw * 2.3, 28);
 
   if (logo) {
-    fillRoundedRect(ctx, padding, headerY, logoSize, logoSize, cqw * 0.9, "rgba(255,255,255,0.92)");
-    drawImageContain(ctx, logo, padding + cqw * 0.7, headerY + cqw * 0.7, logoSize - cqw * 1.4, logoSize - cqw * 1.4);
+    fillRoundedRect(ctx, padding, headerY, logoWidth, logoHeight, cqw * 0.9, "rgba(255,255,255,0.92)");
+    drawImageContain(ctx, logo, padding + cqw * 0.7, headerY + cqw * 0.7, logoWidth - cqw * 1.4, logoHeight - cqw * 1.4);
   }
 
   ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.font = `600 ${smallFont}px Inter, Arial, sans-serif`;
   ctx.textBaseline = "top";
-  ctx.fillText("SCIENTIFRIKA", padding + logoSize + cqw * 2, headerY + cqw * 0.8);
+  ctx.fillText(event.frame.eyebrow, padding + logoWidth + cqw * 2, headerY + cqw * 0.8);
   ctx.fillStyle = "#ffffff";
   ctx.font = `900 ${copyFont}px Inter, Arial, sans-serif`;
-  ctx.fillText("scientiFRIKA 2026", padding + logoSize + cqw * 2, headerY + cqw * 3.8);
+  ctx.fillText(event.frame.title, padding + logoWidth + cqw * 2, headerY + cqw * 3.8, width - padding * 2 - logoWidth - cqw * 2);
 
   const badgeText = "Attendee";
   ctx.font = `700 ${smallFont}px Inter, Arial, sans-serif`;
@@ -298,7 +461,7 @@ async function createFramePngBlob({
   drawImageContain(ctx, photo, photoX, photoY, photoWidth, photoHeight);
   const photoShade = ctx.createLinearGradient(0, photoY, 0, photoY + photoHeight);
   photoShade.addColorStop(0.45, "rgba(17,24,39,0)");
-  photoShade.addColorStop(1, "rgba(17,24,39,0.34)");
+  photoShade.addColorStop(1, event.theme.photoShade);
   ctx.fillStyle = photoShade;
   ctx.fillRect(photoX, photoY, photoWidth, photoHeight);
   ctx.restore();
@@ -319,21 +482,81 @@ async function createFramePngBlob({
 
   textY += cqw * 2.2;
   ctx.font = `900 ${cqw * 4}px Inter, Arial, sans-serif`;
-  ctx.fillText("Science Without Limits", textX, textY);
-  textY += cqw * 4.3;
-  ctx.fillText("Africa Without Borders", textX, textY);
+  for (const line of event.frame.titleLines) {
+    ctx.fillText(line, textX, textY, maxTextWidth);
+    textY += cqw * 4.3;
+  }
 
-  textY += cqw * 5;
+  textY += cqw * 0.7;
   ctx.fillStyle = "rgba(255,255,255,0.76)";
   ctx.font = `600 ${smallFont}px Inter, Arial, sans-serif`;
-  ctx.fillText("#scientiFRIKA2026  #ScienceWithoutLimits  #AfricaWithoutBorders", textX, textY, maxTextWidth);
+  ctx.fillText(event.frame.hashtags, textX, textY, maxTextWidth);
 
   return canvasToPngBlob(canvas);
 }
 
-export default function ScientifrikaExperience() {
+export function EventChooser() {
+  const events = Object.values(EVENT_CONFIGS);
+
+  return (
+    <main className="min-h-screen bg-[#101621] text-white">
+      <section className="flex min-h-screen flex-col px-4 py-5">
+        <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
+          <div className="text-sm font-black">Frame Creator</div>
+          <div className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/75">2026</div>
+        </header>
+
+        <div className="mx-auto grid w-full max-w-5xl flex-1 content-center gap-6 py-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+          <div>
+            <h1 className="text-balance text-4xl font-black leading-tight sm:text-5xl">Choose Your Event</h1>
+            <p className="mt-3 max-w-md text-base font-semibold leading-7 text-slate-300">
+              Pick the event you are attending and start your frame journey.
+            </p>
+          </div>
+
+          <div className="grid gap-3">
+            {events.map((event) => (
+              <Link
+                key={event.key}
+                href={`${event.route}#create`}
+                style={getEventCssVars(event)}
+                className="group rounded-lg border border-white/10 bg-white p-4 text-[#111827] shadow-2xl shadow-black/20 transition-all hover:-translate-y-0.5 hover:shadow-black/30"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="grid h-16 w-28 shrink-0 place-items-center rounded-md border border-slate-100 bg-white px-2">
+                    <Image src={event.logoSrc} alt={event.logoAlt} width={180} height={80} priority className="max-h-12 w-full object-contain" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-xl font-black">{event.eventName}</h2>
+                    <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-slate-600">{event.chooserBody}</p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-slate-500">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1">
+                        <CalendarDays className="size-3" />
+                        {event.date}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1">
+                        <MapPin className="size-3" />
+                        {event.venue}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="grid size-9 shrink-0 place-items-center rounded-md bg-[linear-gradient(135deg,var(--scientifrika-magenta),var(--scientifrika-purple))] text-white shadow-lg shadow-primary/20 transition-transform group-hover:translate-x-0.5">
+                    <ArrowRight className="size-4" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+export default function ScientifrikaExperience({ eventKey = "scientifrika" }: { eventKey?: EventKey }) {
+  const event = EVENT_CONFIGS[eventKey];
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [experience, setExperience] = useState(TAKEAWAYS[0]);
+  const [experience, setExperience] = useState(event.takeaways[0]);
   const [formatKey, setFormatKey] = useState<FormatKey>("instagram");
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const [captionCopied, setCaptionCopied] = useState(false);
@@ -349,6 +572,10 @@ export default function ScientifrikaExperience() {
     () => FORMATS.find((f) => f.key === formatKey) ?? FORMATS[0],
     [formatKey],
   );
+
+  useEffect(() => {
+    setExperience(event.takeaways[0]);
+  }, [event]);
 
   useEffect(() => {
     return () => {
@@ -394,9 +621,8 @@ export default function ScientifrikaExperience() {
   };
 
   const shareCaption = useMemo(
-    () =>
-      `I was part of Africa's biggest scientific gathering - scientiFRIKA 2026. ${experience} #scientiFRIKA2026 #ScienceWithoutLimits #AfricaWithoutBorders`,
-    [experience],
+    () => event.caption(experience),
+    [event, experience],
   );
 
   const flowSteps = useMemo(
@@ -443,8 +669,8 @@ export default function ScientifrikaExperience() {
 
     setIsExporting(true);
     try {
-      const blob = await createFramePngBlob({ photoUrl, experience, format: activeFormat });
-      downloadBlob(blob, `scientifrika-2026-${activeFormat.key}.png`);
+      const blob = await createFramePngBlob({ photoUrl, experience, format: activeFormat, event });
+      downloadBlob(blob, `${event.filePrefix}-${activeFormat.key}.png`);
       setHasDownloaded(true);
       setOpenedPlatform(false);
 
@@ -459,41 +685,40 @@ export default function ScientifrikaExperience() {
   };
 
   return (
-    <main className="min-h-screen bg-[#111827] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-[#111827]/90 px-4 py-3 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <Image src={LOGO_SRC} alt="scientiFRIKA" width={36} height={36} priority className="size-9 shrink-0 rounded-lg object-contain" />
-          <span className="truncate text-sm font-black tracking-normal text-white">scientiFRIKA 2026</span>
-        </div>
+    <main className="min-h-screen text-white" style={{ ...getEventCssVars(event), backgroundColor: event.theme.background }}>
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 px-4 py-3 backdrop-blur-md" style={{ backgroundColor: `${event.theme.background}e6` }}>
+        <Link href="/" className="flex min-w-0 items-center gap-2">
+          <span className="grid h-9 w-24 shrink-0 place-items-center rounded-md bg-white/95 px-1.5">
+            <Image src={event.logoSrc} alt={event.logoAlt} width={140} height={54} priority className="h-full w-full object-contain" />
+          </span>
+          <span className="truncate text-sm font-black tracking-normal text-white">{event.eventName}</span>
+        </Link>
         <a href="#create" className="flex cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/20">
           <ImagePlus className="size-3.5" />
           Create
         </a>
       </header>
 
-      {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-6 pt-8">
         <div className="mx-auto max-w-lg text-center">
           <h1 className="text-balance text-3xl font-black leading-tight sm:text-4xl">
-            I Was Part of Africa&apos;s Biggest Scientific Gathering
+            {event.heroTitle}
           </h1>
-          <p className="mt-3 text-base font-semibold text-slate-300">Science Without Limits. Africa Without Borders.</p>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Upload your photo, pick your takeaway, and create your frame for LinkedIn, Instagram, or WhatsApp.</p>
-          <a href="#create" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-magenta px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-transform active:scale-95">
+          <p className="mt-3 text-base font-semibold text-slate-300">{event.heroSubtitle}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">{event.heroBody}</p>
+          <a href="#create" className="mt-5 inline-flex items-center gap-2 rounded-md bg-magenta px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-transform active:scale-95">
             <ImagePlus className="size-4" />
             Create My Frame
           </a>
         </div>
       </section>
 
-      {/* Create */}
-      <section id="create" className="bg-[#f8fafc] px-4 pb-10 pt-8 text-[#111827]">
+      <section id="create" className="px-4 pb-10 pt-8 text-[#111827]" style={{ backgroundColor: event.theme.pageTint }}>
         <div className="mx-auto flex max-w-lg flex-col gap-4">
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handleFile} />
           <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={handleFile} />
 
-          <div className="sticky top-[57px] z-10 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-200/70 backdrop-blur-md">
+          <div className="sticky top-[57px] z-10 rounded-lg border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-200/70 backdrop-blur-md">
             <div className="relative">
               <div className="absolute left-4 right-4 top-3 h-1 rounded-full bg-slate-100" />
               <div className="absolute left-4 top-3 h-1 rounded-full bg-primary transition-all" style={{ width: progressWidth }} />
@@ -513,8 +738,7 @@ export default function ScientifrikaExperience() {
             </div>
           </div>
 
-          {/* Frame */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold">1. Upload & Frame</h2>
               <span className={cn(
@@ -565,10 +789,10 @@ export default function ScientifrikaExperience() {
               onDragOver={(e) => e.preventDefault()}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
-              className="mt-4 mx-auto w-full max-w-[420px]"
+              className="mx-auto mt-4 w-full max-w-[420px]"
             >
               <div className={cn("rounded-lg transition-all", !photoUrl && "cursor-pointer ring-2 ring-dashed ring-slate-300 hover:ring-primary/50", isDragging && "ring-primary")}>
-                <SocialFrame photoUrl={photoUrl} experience={experience} format={activeFormat} />
+                <SocialFrame photoUrl={photoUrl} experience={experience} format={activeFormat} event={event} />
               </div>
             </div>
 
@@ -577,24 +801,23 @@ export default function ScientifrikaExperience() {
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl bg-magenta px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all active:scale-[0.97]">
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-md bg-magenta px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all active:scale-[0.97]">
                 <ImagePlus className="size-4" />
                 {photoUrl ? "Replace" : "Upload"}
               </button>
-              <button type="button" onClick={() => cameraInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary/20 bg-primary/5 px-4 py-3 text-sm font-bold text-primary shadow-sm transition-all active:scale-[0.97]">
+              <button type="button" onClick={() => cameraInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-md border-2 border-primary/20 bg-primary/5 px-4 py-3 text-sm font-bold text-primary shadow-sm transition-all active:scale-[0.97]">
                 <Camera className="size-4" />
                 Camera
               </button>
             </div>
           </div>
 
-          {/* Takeaway */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
             <h2 className="text-sm font-bold">2. Choose Takeaway</h2>
-            <p className="mt-0.5 text-xs text-slate-500">What was your biggest scientiFRIKA takeaway?</p>
+            <p className="mt-0.5 text-xs text-slate-500">{event.takeawayPrompt}</p>
 
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {TAKEAWAYS.map((t) => (
+              {event.takeaways.map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -624,7 +847,7 @@ export default function ScientifrikaExperience() {
             <p className="mt-1 text-right text-xs font-semibold text-slate-400">{experience.length}/200</p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-bold">3. Download Frame</h2>
               <span className={cn(
@@ -641,8 +864,7 @@ export default function ScientifrikaExperience() {
             </Button>
           </div>
 
-          {/* Share */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-bold">4. Copy & Post</h2>
               <span className={cn(
@@ -678,9 +900,9 @@ export default function ScientifrikaExperience() {
                     href={platform.getUrl(shareCaption)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={(event) => {
+                    onClick={(clickEvent) => {
                       if (!hasDownloaded) {
-                        event.preventDefault();
+                        clickEvent.preventDefault();
                         showNotify("Download your PNG first, then open a platform.");
                         return;
                       }
@@ -692,7 +914,7 @@ export default function ScientifrikaExperience() {
                     aria-busy={isExporting || undefined}
                     aria-disabled={!hasDownloaded}
                     className={cn(
-                      "flex items-center justify-center rounded-xl border border-slate-200 px-2 py-2.5 shadow-sm transition-all active:scale-[0.97]",
+                      "flex items-center justify-center rounded-md border border-slate-200 px-2 py-2.5 shadow-sm transition-all active:scale-[0.97]",
                       hasDownloaded ? "bg-slate-50 hover:bg-slate-100" : "bg-slate-100 opacity-55",
                     )}
                     title={`Open ${platform.label}`}
@@ -706,19 +928,16 @@ export default function ScientifrikaExperience() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 bg-[#111827] px-4 py-6 text-center text-xs text-slate-400">
-        <p>Science Without Limits, Africa Without Borders</p>
-        <p className="mt-1">&copy; scientiFRIKA 2026</p>
+      <footer className="border-t border-white/10 px-4 py-6 text-center text-xs text-slate-400" style={{ backgroundColor: event.theme.background }}>
+        <p>{event.footerLine}</p>
+        <p className="mt-1">&copy; {event.eventName}</p>
       </footer>
 
-      {/* Notification */}
       {notify && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#111827] px-5 py-3 text-sm font-bold text-white shadow-2xl shadow-black/40 ring-1 ring-white/10">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg px-5 py-3 text-sm font-bold text-white shadow-2xl shadow-black/40 ring-1 ring-white/10" style={{ backgroundColor: event.theme.background }}>
           {notify}
         </div>
       )}
-
     </main>
   );
 }
@@ -748,12 +967,13 @@ function WhatsAppIcon({ className }: SocialIconProps) {
 }
 
 function SocialFrame({
-  photoUrl, experience, format,
+  photoUrl, experience, format, event,
 }: {
-  photoUrl: string | null; experience: string; format: (typeof FORMATS)[number];
+  photoUrl: string | null; experience: string; format: FrameFormat; event: EventConfig;
 }) {
   const isTall = format.height > format.width;
-  const safeExperience = experience.trim() || "Exploring science without limits.";
+  const safeExperience = experience.trim() || event.frame.fallbackTakeaway;
+  const logoBoxClass = event.key === "reliability-africa" ? "w-[18cqw] min-w-20" : "w-[9cqw] min-w-9";
 
   return (
     <div
@@ -761,12 +981,14 @@ function SocialFrame({
     >
       <div className={cn("relative z-10 flex h-full flex-col", isTall ? "gap-[4cqw] p-[6cqw]" : "gap-[3cqw] p-[5cqw]")}>
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-[2cqw]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- Plain img keeps the preview aligned with canvas export assets. */}
-            <img src={LOGO_SRC} alt="" className="size-[9cqw] min-h-9 min-w-9 rounded-md object-contain" />
-            <div className="flex flex-col">
-              <span className="frame-small font-semibold uppercase text-white/72">scientiFRIKA</span>
-              <span className="frame-copy font-black">scientiFRIKA 2026</span>
+          <div className="flex min-w-0 items-center gap-[2cqw]">
+            <span className={cn("grid h-[9cqw] min-h-9 place-items-center rounded-md bg-white/95 px-[0.8cqw]", logoBoxClass)}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- Plain img keeps the preview aligned with canvas export assets. */}
+              <img src={event.logoSrc} alt="" className="h-full w-full object-contain" />
+            </span>
+            <div className="flex min-w-0 flex-col">
+              <span className="frame-small truncate font-semibold uppercase text-white/72">{event.frame.eyebrow}</span>
+              <span className="frame-copy truncate font-black">{event.frame.title}</span>
             </div>
           </div>
           <div className="rounded-md border border-white/16 bg-white/10 px-[2cqw] py-[1.2cqw]">
@@ -779,22 +1001,32 @@ function SocialFrame({
             // eslint-disable-next-line @next/next/no-img-element -- User-uploaded blob URLs render most reliably with plain img.
             <img src={photoUrl} alt="" className="absolute inset-0 size-full object-contain" />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,rgba(216,27,96,0.72),rgba(123,31,162,0.84))]">
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+              style={{
+                background: `radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 28%), linear-gradient(135deg, ${event.theme.placeholderA}, ${event.theme.placeholderB})`,
+              }}
+            >
               <UploadCloud className="size-[6cqw]" />
-              <span className="frame-copy font-bold text-white/88">Your photo</span>
+              <span className="frame-copy font-bold text-white/88">{event.frame.placeholder}</span>
             </div>
           )}
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(17,24,39,0.34))]" />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 45%, ${event.theme.photoShade})` }} />
         </div>
 
         <div className="flex flex-col gap-[2.4cqw]">
           <blockquote className="frame-quote text-balance font-black leading-tight">&ldquo;{safeExperience}&rdquo;</blockquote>
           <div className="flex flex-col gap-[1cqw]">
             <p className="frame-title font-black leading-none">
-              Science Without Limits<br />Africa Without Borders
+              {event.frame.titleLines.map((line, index) => (
+                <span key={line}>
+                  {line}
+                  {index < event.frame.titleLines.length - 1 ? <br /> : null}
+                </span>
+              ))}
             </p>
             <p className="frame-small font-semibold text-white/76">
-              #scientiFRIKA2026&nbsp;&nbsp;#ScienceWithoutLimits&nbsp;&nbsp;#AfricaWithoutBorders
+              {event.frame.hashtags}
             </p>
           </div>
         </div>

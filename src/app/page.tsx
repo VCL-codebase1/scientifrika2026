@@ -1,5 +1,5 @@
-import ScientifrikaExperience from "@/components/scientifrika-experience";
+import { EventChooser } from "@/components/scientifrika-experience";
 
 export default function Home() {
-  return <ScientifrikaExperience />;
+  return <EventChooser />;
 }
