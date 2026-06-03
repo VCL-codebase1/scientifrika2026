@@ -65,8 +65,12 @@ export default function ScientifrikaExperience() {
   }, [photoUrl]);
 
   const updatePhoto = useCallback((file?: File) => {
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file || !file.type.startsWith("image/")) {
+      console.log("[upload] rejected:", file?.name, file?.type);
+      return;
+    }
     const nextUrl = URL.createObjectURL(file);
+    console.log("[upload] created blob URL:", nextUrl);
     setPhotoUrl((current) => {
       if (current) URL.revokeObjectURL(current);
       return nextUrl;
@@ -74,7 +78,9 @@ export default function ScientifrikaExperience() {
   }, []);
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
-    updatePhoto(e.target.files?.[0]);
+    const file = e.target.files?.[0];
+    console.log("[upload] file selected:", file?.name, file?.type);
+    updatePhoto(file);
     e.target.value = "";
   };
 
@@ -131,9 +137,11 @@ export default function ScientifrikaExperience() {
   }, []);
 
   const shareToPlatform = (url: string) => async () => {
+    console.log("[share] clicked, photoUrl:", !!photoUrl, "url:", url.slice(0, 50));
     setIsExporting(true);
     try {
       const blob = await getImageBlob();
+      console.log("[share] blob obtained:", !!blob);
       if (!blob) return;
       const file = new File([blob], `scientifrika-2026-${activeFormat.key}.png`, { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
