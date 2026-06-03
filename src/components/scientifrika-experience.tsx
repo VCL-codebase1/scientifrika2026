@@ -164,12 +164,16 @@ export default function ScientifrikaExperience() {
     window.open(`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(shareCaption)}&u=${encodeURIComponent("https://scientifrika2026.com")}`, "_blank", "noopener");
   };
 
+  const shareToWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareCaption)}`, "_blank", "noopener");
+  };
+
   return (
     <main className="min-h-screen bg-[#111827] text-white">
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-[#111827]/90 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-[9px] font-black uppercase leading-3 text-white shadow-lg shadow-primary/20">SF</div>
+          <img src="/cropped-IMG-20251009-WA0008.webp" alt="scientiFRIKA" className="size-9 shrink-0 rounded-lg object-contain" />
           <span className="truncate text-sm font-black tracking-normal text-white">scientiFRIKA 2026</span>
         </div>
         <a href="#create" className="flex cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/20">
@@ -196,58 +200,10 @@ export default function ScientifrikaExperience() {
       {/* Create */}
       <section id="create" className="bg-[#f8fafc] px-4 pb-10 pt-8 text-[#111827]">
         <div className="mx-auto flex max-w-lg flex-col gap-4">
-          {/* Upload */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
-            <h2 className="flex items-center gap-2 text-sm font-bold">
-              <UploadCloud className="size-4 text-primary" />
-              Upload Photo
-            </h2>
+          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handleFile} />
+          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={handleFile} />
 
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handleFile} />
-            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={handleFile} />
-
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
-              onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragOver={(e) => e.preventDefault()}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              className={cn(
-                "mt-3 flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center transition-colors",
-                isDragging && "border-primary bg-primary/5",
-              )}
-            >
-              {photoUrl ? (
-                <img src={photoUrl} alt="" className="h-40 w-full rounded-lg object-scale-down bg-slate-800 shadow-inner" />
-              ) : (
-                <>
-                  <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <ImagePlus className="size-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">Tap to upload or drag a photo</p>
-                    <p className="mt-0.5 text-xs text-slate-500">JPG, PNG, WEBP</p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl bg-magenta px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all active:scale-[0.97]">
-                <ImagePlus className="size-4" />
-                {photoUrl ? "Replace" : "Upload"}
-              </button>
-              <button type="button" onClick={() => cameraInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary/20 bg-primary/5 px-4 py-3 text-sm font-bold text-primary shadow-sm transition-all active:scale-[0.97]">
-                <Camera className="size-4" />
-                Camera
-              </button>
-            </div>
-          </div>
-
-          {/* Preview + Download */}
+          {/* Frame */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold">Your Frame</h2>
@@ -279,31 +235,54 @@ export default function ScientifrikaExperience() {
               })}
             </div>
 
-            <div className="mt-4 mx-auto w-full max-w-[320px]">
-              <SocialFrame photoUrl={photoUrl} experience={experience} format={activeFormat} />
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => { if (!photoUrl) fileInputRef.current?.click(); }}
+              onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !photoUrl) fileInputRef.current?.click(); }}
+              onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              className="mt-4 mx-auto w-full max-w-[320px]"
+            >
+              <div className={cn("rounded-lg transition-all", !photoUrl && "cursor-pointer ring-2 ring-dashed ring-slate-300 hover:ring-primary/50", isDragging && "ring-primary")}>
+                <SocialFrame photoUrl={photoUrl} experience={experience} format={activeFormat} />
+              </div>
             </div>
 
             <p className="mt-2 text-center text-[10px] text-slate-400">
               {activeFormat.label} &middot; {activeFormat.width}&times;{activeFormat.height}
             </p>
 
-            <Button type="button" variant="magenta" className="mt-3 w-full" onClick={downloadFrame} disabled={isExporting}>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl bg-magenta px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all active:scale-[0.97]">
+                <ImagePlus className="size-4" />
+                {photoUrl ? "Replace" : "Upload"}
+              </button>
+              <button type="button" onClick={() => cameraInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary/20 bg-primary/5 px-4 py-3 text-sm font-bold text-primary shadow-sm transition-all active:scale-[0.97]">
+                <Camera className="size-4" />
+                Camera
+              </button>
+            </div>
+
+            <Button type="button" variant="magenta" className="mt-3 w-full" onClick={downloadFrame} disabled={isExporting || !photoUrl}>
               {isExporting ? <Check className="size-4" /> : <Download className="size-4" />}
               {isExporting ? "Preparing..." : "Download PNG"}
             </Button>
 
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              <button type="button" onClick={shareToX} disabled={!photoUrl} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40">
-                <svg viewBox="0 0 24 24" className="size-3.5 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                X
+            <div className="mt-2 grid grid-cols-4 gap-2">
+              <button type="button" onClick={shareToX} disabled={!photoUrl} className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40" title="Share on X">
+                <svg viewBox="0 0 24 24" className="size-4 fill-current text-slate-700"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </button>
-              <button type="button" onClick={shareToInstagram} disabled={!photoUrl || isExporting} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40">
-                <Instagram className="size-3.5" />
-                Instagram
+              <button type="button" onClick={shareToInstagram} disabled={!photoUrl || isExporting} className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40" title="Share on Instagram">
+                <Instagram className="size-4 text-slate-700" />
               </button>
-              <button type="button" onClick={shareToFacebook} disabled={!photoUrl} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40">
-                <svg viewBox="0 0 24 24" className="size-3.5 fill-current"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                Facebook
+              <button type="button" onClick={shareToFacebook} disabled={!photoUrl} className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40" title="Share on Facebook">
+                <svg viewBox="0 0 24 24" className="size-4 fill-current text-slate-700"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </button>
+              <button type="button" onClick={shareToWhatsApp} disabled={!photoUrl} className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40" title="Share on WhatsApp">
+                <svg viewBox="0 0 24 24" className="size-4 fill-current text-slate-700"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
               </button>
             </div>
             <button type="button" onClick={shareFrame} disabled={!photoUrl || isExporting} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#1e293b] active:scale-[0.97] disabled:opacity-40">
@@ -382,7 +361,7 @@ function SocialFrame({
       <div className={cn("relative z-10 flex h-full flex-col", isTall ? "gap-[4cqw] p-[6cqw]" : "gap-[3cqw] p-[5cqw]")}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-[2cqw]">
-            <div className="grid size-[9cqw] min-h-9 min-w-9 place-items-center rounded-md border border-white/25 bg-white/14 text-[2.7cqw] font-black">SF</div>
+            <img src="/cropped-IMG-20251009-WA0008.webp" alt="" className="size-[9cqw] min-h-9 min-w-9 rounded-md object-contain" />
             <div className="flex flex-col">
               <span className="frame-small font-semibold uppercase text-white/72">scientiFRIKA</span>
               <span className="frame-copy font-black">scientiFRIKA 2026</span>
