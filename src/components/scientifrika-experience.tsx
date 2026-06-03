@@ -95,6 +95,7 @@ type EventConfig = {
   logoSrc: string;
   logoAlt: string;
   chooserBody: string;
+  chooserAction: string;
   heroTitle: string;
   heroSubtitle: string;
   heroBody: string;
@@ -124,6 +125,7 @@ const EVENT_CONFIGS: Record<EventKey, EventConfig> = {
     logoSrc: "/cropped-IMG-20251009-WA0008.webp",
     logoAlt: "scientiFRIKA logo",
     chooserBody: "Science Without Limits. Africa Without Borders.",
+    chooserAction: "Enter scientiFRIKA",
     heroTitle: "I Was Part of Africa's Biggest Scientific Gathering",
     heroSubtitle: "Science Without Limits. Africa Without Borders.",
     heroBody: "Upload your photo, pick your takeaway, and create your frame for LinkedIn, Instagram, or WhatsApp.",
@@ -166,6 +168,7 @@ const EVENT_CONFIGS: Record<EventKey, EventConfig> = {
     logoSrc: "/cropped-rra3.webp",
     logoAlt: "Reliability Africa logo",
     chooserBody: "International Exhibition, Conference & Workshop.",
+    chooserAction: "Enter Reliability Africa",
     heroTitle: "I Was Part of Reliability Africa 2026",
     heroSubtitle: "International Exhibition, Conference & Workshop.",
     heroBody: "Upload your photo, pick your takeaway, and create your event frame for LinkedIn, Instagram, or WhatsApp.",
@@ -499,18 +502,23 @@ export function EventChooser() {
   const events = Object.values(EVENT_CONFIGS);
 
   return (
-    <main className="min-h-screen bg-[#101621] text-white">
-      <section className="flex min-h-screen flex-col px-4 py-5">
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(216,27,96,0.24),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(201,121,43,0.28),transparent_34%),#101621] text-white">
+      <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 pb-5 pt-4 sm:px-6 lg:px-8">
         <header className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <div className="text-sm font-black">Frame Creator</div>
-          <div className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/75">2026</div>
+          <div className="text-sm font-black">Frame Quest</div>
+          <div className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/75">Live Events</div>
         </header>
 
-        <div className="mx-auto grid w-full max-w-5xl flex-1 content-center gap-6 py-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+        <div className="grid flex-1 content-center gap-5 py-5 sm:py-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:gap-8">
           <div>
-            <h1 className="text-balance text-4xl font-black leading-tight sm:text-5xl">Choose Your Event</h1>
-            <p className="mt-3 max-w-md text-base font-semibold leading-7 text-slate-300">
-              Pick the event you are attending and start your frame journey.
+            <p className="inline-flex rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black uppercase text-white/70">
+              Choose your event pass
+            </p>
+            <h1 className="mt-4 text-balance text-[2.65rem] font-black leading-[0.95] sm:text-5xl">
+              Where are you making memories today?
+            </h1>
+            <p className="mt-4 max-w-md text-base font-semibold leading-7 text-slate-300">
+              Tap your current event, unlock your attendee frame, and get your post-ready moment in one smooth run.
             </p>
           </div>
 
@@ -520,27 +528,28 @@ export function EventChooser() {
                 key={event.key}
                 href={`${event.route}#create`}
                 style={getEventCssVars(event)}
-                className="group rounded-lg border border-white/10 bg-white p-4 text-[#111827] shadow-2xl shadow-black/20 transition-all hover:-translate-y-0.5 hover:shadow-black/30"
+                className="group rounded-lg border border-white/10 bg-white p-3 text-[#111827] shadow-2xl shadow-black/20 transition-all active:scale-[0.99] sm:p-4 sm:hover:-translate-y-0.5 sm:hover:shadow-black/30"
               >
-                <div className="flex items-center gap-4">
-                  <div className="grid h-16 w-28 shrink-0 place-items-center rounded-md border border-slate-100 bg-white px-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="grid h-16 w-full shrink-0 place-items-center rounded-md border border-slate-100 bg-white px-3 sm:w-32">
                     <Image src={event.logoSrc} alt={event.logoAlt} width={180} height={80} priority className="max-h-12 w-full object-contain" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-xl font-black">{event.eventName}</h2>
-                    <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-slate-600">{event.chooserBody}</p>
-                    <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-slate-500">
+                  <div className="min-w-0 flex-1 sm:py-1">
+                    <h2 className="text-balance text-xl font-black leading-tight">{event.eventName}</h2>
+                    <p className="mt-1 text-sm font-semibold leading-5 text-slate-600">{event.chooserBody}</p>
+                    <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-bold text-slate-500">
                       <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1">
                         <CalendarDays className="size-3" />
                         {event.date}
                       </span>
-                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1">
+                      <span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-slate-100 px-2 py-1">
                         <MapPin className="size-3" />
-                        {event.venue}
+                        <span className="truncate">{event.venue}</span>
                       </span>
                     </div>
                   </div>
-                  <span className="grid size-9 shrink-0 place-items-center rounded-md bg-[linear-gradient(135deg,var(--scientifrika-magenta),var(--scientifrika-purple))] text-white shadow-lg shadow-primary/20 transition-transform group-hover:translate-x-0.5">
+                  <span className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,var(--scientifrika-magenta),var(--scientifrika-purple))] px-4 text-sm font-black text-white shadow-lg shadow-primary/20 transition-transform sm:size-10 sm:px-0 sm:group-hover:translate-x-0.5">
+                    <span className="sm:sr-only">{event.chooserAction}</span>
                     <ArrowRight className="size-4" />
                   </span>
                 </div>
