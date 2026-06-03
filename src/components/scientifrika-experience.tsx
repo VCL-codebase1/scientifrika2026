@@ -223,6 +223,8 @@ export default function ScientifrikaExperience() {
 
       downloadBlob(blob, `scientifrika-2026-${activeFormat.key}.png`);
       showNotify("PNG downloaded. Open a platform below and upload it there.");
+    } catch {
+      showNotify("Could not download the PNG. Try replacing the photo and downloading again.");
     } finally {
       setIsExporting(false);
     }
@@ -463,7 +465,8 @@ function SocialFrame({
       <div className={cn("relative z-10 flex h-full flex-col", isTall ? "gap-[4cqw] p-[6cqw]" : "gap-[3cqw] p-[5cqw]")}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-[2cqw]">
-            <Image src="/cropped-IMG-20251009-WA0008.webp" alt="" width={96} height={96} unoptimized className="size-[9cqw] min-h-9 min-w-9 rounded-md object-contain" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- Plain img is more reliable for html-to-image exports. */}
+            <img src="/cropped-IMG-20251009-WA0008.webp" alt="" className="size-[9cqw] min-h-9 min-w-9 rounded-md object-contain" />
             <div className="flex flex-col">
               <span className="frame-small font-semibold uppercase text-white/72">scientiFRIKA</span>
               <span className="frame-copy font-black">scientiFRIKA 2026</span>
