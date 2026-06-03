@@ -131,11 +131,13 @@ export default function ScientifrikaExperience() {
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text: shareCaption });
       } else {
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.download = file.name;
-        link.href = URL.createObjectURL(blob);
+        link.href = blobUrl;
         link.click();
-        window.open(url, "_blank", "noopener");
+        URL.revokeObjectURL(blobUrl);
+        if (url) window.open(url, "_blank", "noopener");
       }
     } finally {
       setIsExporting(false);
