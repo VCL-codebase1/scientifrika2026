@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { toPng } from "html-to-image";
+import { toBlob } from "html-to-image";
 import {
   Camera,
   Check,
@@ -35,7 +35,6 @@ const TAKEAWAYS = [
   "Advancing African innovation through research.",
 ];
 
-const EVENT_URL = "https://scientifrika2026.com";
 const INSTAGRAM_CREATE_URL = "https://www.instagram.com/create/select/";
 
 const FORMATS = [
@@ -51,7 +50,6 @@ type SharePlatform = {
   label: string;
   icon: ComponentType<SocialIconProps>;
   getUrl: (caption: string) => string;
-  supportsCaptionUrl: boolean;
 };
 
 const SHARE_PLATFORMS: SharePlatform[] = [
@@ -59,71 +57,71 @@ const SHARE_PLATFORMS: SharePlatform[] = [
     key: "x",
     label: "X",
     icon: XIcon,
-    getUrl: (caption) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`,
-    supportsCaptionUrl: true,
+    getUrl: (caption) => `https://twitter.com/compose/post?text=${encodeURIComponent(caption)}`,
   },
   {
     key: "instagram",
     label: "Instagram",
     icon: Instagram,
     getUrl: () => INSTAGRAM_CREATE_URL,
-    supportsCaptionUrl: false,
   },
   {
     key: "facebook",
     label: "Facebook",
     icon: FacebookIcon,
-    getUrl: (caption) =>
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(EVENT_URL)}&quote=${encodeURIComponent(caption)}`,
-    supportsCaptionUrl: true,
+    getUrl: () => "https://www.facebook.com/",
   },
   {
     key: "whatsapp",
     label: "WhatsApp",
     icon: WhatsAppIcon,
     getUrl: (caption) => `https://wa.me/?text=${encodeURIComponent(caption)}`,
-    supportsCaptionUrl: true,
   },
   {
     key: "linkedin",
     label: "LinkedIn",
     icon: Linkedin,
     getUrl: (caption) => `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(caption)}`,
-    supportsCaptionUrl: true,
   },
 ];
-
-async function copyTextToClipboard(text: string) {
-  if (!navigator.clipboard?.writeText) return false;
-
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function copyImageToClipboard(blob: Blob) {
-  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
-    return false;
-  }
-
-  try {
-    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function downloadBlob(blob: Blob, fileName: string) {
   const blobUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.download = fileName;
   link.href = blobUrl;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
   window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+}
+
+async function waitForFrameAssets(node: HTMLElement) {
+  await document.fonts.ready;
+
+  const images = Array.from(node.querySelectorAll("img"));
+  await Promise.all(
+    images.map(async (image) => {
+      if (image.complete && image.naturalWidth > 0) return;
+
+      try {
+        await image.decode();
+        return;
+      } catch {
+        await new Promise<void>((resolve) => {
+          const cleanup = () => {
+            image.removeEventListener("load", cleanup);
+            image.removeEventListener("error", cleanup);
+            resolve();
+          };
+
+          image.addEventListener("load", cleanup, { once: true });
+          image.addEventListener("error", cleanup, { once: true });
+          window.setTimeout(cleanup, 2500);
+        });
+      }
+    }),
+  );
 }
 
 export default function ScientifrikaExperience() {
@@ -182,13 +180,16 @@ export default function ScientifrikaExperience() {
     updatePhoto(e.dataTransfer.files?.[0]);
   };
 
-  const captureFrame = useCallback(async () => {
+  const captureFrameBlob = useCallback(async () => {
     if (!exportRef.current) return null;
-    await document.fonts.ready;
-    return toPng(exportRef.current, {
+
+    await waitForFrameAssets(exportRef.current);
+    return toBlob(exportRef.current, {
       cacheBust: true,
       pixelRatio: 1,
       backgroundColor: "#111827",
+      width: activeFormat.width,
+      height: activeFormat.height,
       canvasWidth: activeFormat.width,
       canvasHeight: activeFormat.height,
     });
@@ -201,64 +202,27 @@ export default function ScientifrikaExperience() {
   );
 
   const downloadFrame = async () => {
-    if (!exportRef.current) return;
-    setIsExporting(true);
-    try {
-      const dataUrl = await captureFrame();
-      if (!dataUrl) return;
-      const link = document.createElement("a");
-      link.download = `scientifrika-2026-${activeFormat.key}.png`;
-      link.href = dataUrl;
-      link.click();
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const getImageBlob = useCallback(async () => {
-    const dataUrl = await captureFrame();
-    if (!dataUrl) return null;
-    const res = await fetch(dataUrl);
-    return res.blob();
-  }, [captureFrame]);
-
-  const prepareShareAsset = (platform: SharePlatform) => async () => {
     if (!photoUrl) {
-      const copiedCaption = await copyTextToClipboard(shareCaption);
-      showNotify(
-        copiedCaption
-          ? "Post opened and caption copied. Upload a photo to include your frame."
-          : "Post opened. Upload a photo to include your frame.",
-      );
+      showNotify("Upload a photo first, then download your PNG.");
+      fileInputRef.current?.click();
+      return;
+    }
+
+    if (!exportRef.current) {
+      showNotify("Frame is not ready yet. Try again.");
       return;
     }
 
     setIsExporting(true);
     try {
-      const blob = await getImageBlob();
+      const blob = await captureFrameBlob();
       if (!blob) {
-        showNotify("Post opened, but the frame could not be prepared.");
+        showNotify("Could not prepare the PNG. Try again.");
         return;
       }
 
-      const fileName = `scientifrika-2026-${activeFormat.key}.png`;
-      const copiedImage = await copyImageToClipboard(blob);
-      if (copiedImage) {
-        showNotify(
-          platform.supportsCaptionUrl
-            ? "Post opened and frame copied. Paste it into your post."
-            : "Instagram opened and frame copied. Paste it there, then add your caption.",
-        );
-        return;
-      }
-
-      downloadBlob(blob, fileName);
-      const copiedCaption = platform.supportsCaptionUrl ? false : await copyTextToClipboard(shareCaption);
-      showNotify(
-        copiedCaption
-          ? "Frame downloaded and caption copied."
-          : "Post opened and frame downloaded. Attach it to your post.",
-      );
+      downloadBlob(blob, `scientifrika-2026-${activeFormat.key}.png`);
+      showNotify("PNG downloaded. Open a platform below and upload it there.");
     } finally {
       setIsExporting(false);
     }
@@ -368,9 +332,9 @@ export default function ScientifrikaExperience() {
               </button>
             </div>
 
-            <Button type="button" variant="magenta" className="mt-3 w-full" onClick={downloadFrame} disabled={isExporting || !photoUrl}>
+            <Button type="button" variant="magenta" className="mt-3 w-full" onClick={downloadFrame} disabled={isExporting}>
               {isExporting ? <Check className="size-4" /> : <Download className="size-4" />}
-              {isExporting ? "Preparing..." : "Download PNG"}
+              {isExporting ? "Preparing..." : photoUrl ? "Download PNG" : "Upload Photo First"}
             </Button>
           </div>
 
@@ -412,7 +376,7 @@ export default function ScientifrikaExperience() {
 
           {/* Share */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
-            <h2 className="text-sm font-bold">Share</h2>
+            <h2 className="text-sm font-bold">Open Platform</h2>
             <div className="mt-3 grid grid-cols-5 gap-2">
               {SHARE_PLATFORMS.map((platform) => {
                 const Icon = platform.icon;
@@ -422,11 +386,10 @@ export default function ScientifrikaExperience() {
                     href={platform.getUrl(shareCaption)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={prepareShareAsset(platform)}
-                    aria-label={`Share on ${platform.label}`}
+                    aria-label={`Open ${platform.label} to upload your downloaded PNG`}
                     aria-busy={isExporting || undefined}
                     className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97]"
-                    title={`Share on ${platform.label}`}
+                    title={`Open ${platform.label}`}
                   >
                     <Icon className="size-4 text-slate-700" />
                   </a>
