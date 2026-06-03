@@ -35,6 +35,8 @@
   --border: rgba(248, 250, 252, 0.16);
   --input: rgba(248, 250, 252, 0.08);
   --ring: rgba(216, 27, 96, 0.62);
+  --scientifrika-magenta: #d81b60;
+  --scientifrika-purple: #7b1fa2;
 }
 
 * { box-sizing: border-box; }
@@ -57,7 +59,7 @@ button, input, textarea { font: inherit; }
   color: #ffffff;
 }
 
-.bg-magenta {
+.bg-magenta, .btn-magenta {
   background: linear-gradient(135deg, #d81b60, #7b1fa2);
 }
 

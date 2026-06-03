@@ -47,6 +47,8 @@ export default function ScientifrikaExperience() {
   const [formatKey, setFormatKey] = useState<FormatKey>("instagram");
   const [isDragging, setIsDragging] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [notify, setNotify] = useState<string | null>(null);
+  const notifyTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -122,6 +124,12 @@ export default function ScientifrikaExperience() {
     return res.blob();
   };
 
+  const showNotify = useCallback((msg: string) => {
+    setNotify(msg);
+    if (notifyTimer.current) clearTimeout(notifyTimer.current);
+    notifyTimer.current = setTimeout(() => setNotify(null), 3000);
+  }, []);
+
   const shareToPlatform = (url: string) => async () => {
     setIsExporting(true);
     try {
@@ -131,12 +139,18 @@ export default function ScientifrikaExperience() {
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text: shareCaption });
       } else {
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.download = file.name;
-        link.href = blobUrl;
-        link.click();
-        URL.revokeObjectURL(blobUrl);
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          showNotify("Image copied! Paste into your post.");
+        } catch {
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.download = file.name;
+          a.href = blobUrl;
+          a.click();
+          URL.revokeObjectURL(blobUrl);
+          showNotify("Image downloaded — attach it to your post.");
+        }
         if (url) window.open(url, "_blank", "noopener");
       }
     } finally {
@@ -310,6 +324,13 @@ export default function ScientifrikaExperience() {
         <p>Science Without Limits, Africa Without Borders</p>
         <p className="mt-1">&copy; scientiFRIKA 2026</p>
       </footer>
+
+      {/* Notification */}
+      {notify && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#111827] px-5 py-3 text-sm font-bold text-white shadow-2xl shadow-black/40 ring-1 ring-white/10">
+          {notify}
+        </div>
+      )}
 
       {/* Hidden export target */}
       <div aria-hidden="true" className="pointer-events-none fixed left-[-1400px] top-0">
