@@ -11,7 +11,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { toBlob } from "html-to-image";
 import {
   Camera,
   Check,
@@ -35,6 +34,7 @@ const TAKEAWAYS = [
   "Advancing African innovation through research.",
 ];
 
+const LOGO_SRC = "/cropped-IMG-20251009-WA0008.webp";
 const INSTAGRAM_CREATE_URL = "https://www.instagram.com/create/select/";
 
 const FORMATS = [
@@ -44,6 +44,7 @@ const FORMATS = [
 ] as const;
 
 type FormatKey = (typeof FORMATS)[number]["key"];
+type FrameFormat = (typeof FORMATS)[number];
 type SocialIconProps = { className?: string };
 type SharePlatform = {
   key: string;
@@ -96,32 +97,224 @@ function downloadBlob(blob: Blob, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 }
 
-async function waitForFrameAssets(node: HTMLElement) {
+function loadCanvasImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image();
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Image failed to load"));
+    image.src = src;
+  });
+}
+
+function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + safeRadius, y);
+  ctx.lineTo(x + width - safeRadius, y);
+  ctx.arcTo(x + width, y, x + width, y + safeRadius, safeRadius);
+  ctx.lineTo(x + width, y + height - safeRadius);
+  ctx.arcTo(x + width, y + height, x + width - safeRadius, y + height, safeRadius);
+  ctx.lineTo(x + safeRadius, y + height);
+  ctx.arcTo(x, y + height, x, y + height - safeRadius, safeRadius);
+  ctx.lineTo(x, y + safeRadius);
+  ctx.arcTo(x, y, x + safeRadius, y, safeRadius);
+  ctx.closePath();
+}
+
+function fillRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, fill: string | CanvasGradient) {
+  roundedRectPath(ctx, x, y, width, height, radius);
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
+function strokeRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, stroke: string, lineWidth: number) {
+  roundedRectPath(ctx, x, y, width, height, radius);
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
+function drawImageContain(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) {
+  const imageWidth = image.naturalWidth || image.width;
+  const imageHeight = image.naturalHeight || image.height;
+  const scale = Math.min(width / imageWidth, height / imageHeight);
+  const drawWidth = imageWidth * scale;
+  const drawHeight = imageHeight * scale;
+
+  ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  const words = text.trim().split(/\s+/);
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (ctx.measureText(nextLine).width <= maxWidth) {
+      currentLine = nextLine;
+      continue;
+    }
+
+    if (currentLine) lines.push(currentLine);
+    currentLine = word;
+  }
+
+  if (currentLine) lines.push(currentLine);
+  return lines;
+}
+
+function fitWrappedText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number, startSize: number, minSize: number) {
+  let fontSize = startSize;
+  let lines: string[] = [];
+
+  while (fontSize >= minSize) {
+    ctx.font = `900 ${fontSize}px Inter, Arial, sans-serif`;
+    lines = wrapText(ctx, text, maxWidth);
+    if (lines.length <= maxLines) break;
+    fontSize -= 2;
+  }
+
+  return { fontSize, lines: lines.slice(0, maxLines) };
+}
+
+function canvasToPngBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("Canvas export failed"));
+      }
+    }, "image/png");
+  });
+}
+
+async function createFramePngBlob({
+  photoUrl,
+  experience,
+  format,
+}: {
+  photoUrl: string;
+  experience: string;
+  format: FrameFormat;
+}) {
+  const [photo, logo] = await Promise.all([
+    loadCanvasImage(photoUrl),
+    loadCanvasImage(LOGO_SRC).catch(() => null),
+  ]);
+
   await document.fonts.ready;
 
-  const images = Array.from(node.querySelectorAll("img"));
-  await Promise.all(
-    images.map(async (image) => {
-      if (image.complete && image.naturalWidth > 0) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = format.width;
+  canvas.height = format.height;
 
-      try {
-        await image.decode();
-        return;
-      } catch {
-        await new Promise<void>((resolve) => {
-          const cleanup = () => {
-            image.removeEventListener("load", cleanup);
-            image.removeEventListener("error", cleanup);
-            resolve();
-          };
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is unavailable");
 
-          image.addEventListener("load", cleanup, { once: true });
-          image.addEventListener("error", cleanup, { once: true });
-          window.setTimeout(cleanup, 2500);
-        });
-      }
-    }),
-  );
+  const { width, height } = canvas;
+  const isTall = height > width;
+  const cqw = width / 100;
+  const padding = cqw * (isTall ? 6 : 5);
+  const gap = cqw * (isTall ? 4 : 3);
+  const radius = cqw * 2.6;
+  const safeExperience = experience.trim() || "Exploring science without limits.";
+
+  const background = ctx.createLinearGradient(0, 0, width, height);
+  background.addColorStop(0, "#5a123f");
+  background.addColorStop(0.48, "#111827");
+  background.addColorStop(1, "#2f174d");
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, width, height);
+
+  const glow = ctx.createRadialGradient(width * 0.22, height * 0.18, 0, width * 0.22, height * 0.18, width * 0.82);
+  glow.addColorStop(0, "rgba(216, 27, 96, 0.42)");
+  glow.addColorStop(1, "rgba(216, 27, 96, 0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
+  strokeRoundedRect(ctx, cqw * 1.1, cqw * 1.1, width - cqw * 2.2, height - cqw * 2.2, radius, "rgba(255,255,255,0.22)", Math.max(2, cqw * 0.12));
+
+  const logoSize = cqw * 9;
+  const headerY = padding;
+  const headerHeight = logoSize;
+  const smallFont = Math.min(cqw * 1.9, 22);
+  const copyFont = Math.min(cqw * 2.3, 28);
+
+  if (logo) {
+    fillRoundedRect(ctx, padding, headerY, logoSize, logoSize, cqw * 0.9, "rgba(255,255,255,0.92)");
+    drawImageContain(ctx, logo, padding + cqw * 0.7, headerY + cqw * 0.7, logoSize - cqw * 1.4, logoSize - cqw * 1.4);
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  ctx.font = `600 ${smallFont}px Inter, Arial, sans-serif`;
+  ctx.textBaseline = "top";
+  ctx.fillText("SCIENTIFRIKA", padding + logoSize + cqw * 2, headerY + cqw * 0.8);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `900 ${copyFont}px Inter, Arial, sans-serif`;
+  ctx.fillText("scientiFRIKA 2026", padding + logoSize + cqw * 2, headerY + cqw * 3.8);
+
+  const badgeText = "Attendee";
+  ctx.font = `700 ${smallFont}px Inter, Arial, sans-serif`;
+  const badgeWidth = ctx.measureText(badgeText).width + cqw * 4;
+  const badgeHeight = cqw * 4.6;
+  fillRoundedRect(ctx, width - padding - badgeWidth, headerY + cqw * 1.8, badgeWidth, badgeHeight, cqw * 0.8, "rgba(255,255,255,0.10)");
+  strokeRoundedRect(ctx, width - padding - badgeWidth, headerY + cqw * 1.8, badgeWidth, badgeHeight, cqw * 0.8, "rgba(255,255,255,0.16)", Math.max(1, cqw * 0.1));
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(badgeText, width - padding - badgeWidth / 2, headerY + cqw * 1.8 + badgeHeight / 2);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+
+  const photoX = padding;
+  const photoY = headerY + headerHeight + gap;
+  const photoWidth = width - padding * 2;
+  const textBlockHeight = isTall ? cqw * 34 : cqw * 25;
+  const photoHeight = isTall ? height - photoY - gap - textBlockHeight - padding : cqw * 50;
+
+  fillRoundedRect(ctx, photoX, photoY, photoWidth, photoHeight, cqw * 3, "rgba(255,255,255,0.10)");
+  ctx.save();
+  roundedRectPath(ctx, photoX, photoY, photoWidth, photoHeight, cqw * 3);
+  ctx.clip();
+  drawImageContain(ctx, photo, photoX, photoY, photoWidth, photoHeight);
+  const photoShade = ctx.createLinearGradient(0, photoY, 0, photoY + photoHeight);
+  photoShade.addColorStop(0.45, "rgba(17,24,39,0)");
+  photoShade.addColorStop(1, "rgba(17,24,39,0.34)");
+  ctx.fillStyle = photoShade;
+  ctx.fillRect(photoX, photoY, photoWidth, photoHeight);
+  ctx.restore();
+  strokeRoundedRect(ctx, photoX, photoY, photoWidth, photoHeight, cqw * 3, "rgba(255,255,255,0.18)", Math.max(2, cqw * 0.1));
+
+  const textX = padding;
+  let textY = photoY + photoHeight + gap;
+  const maxTextWidth = width - padding * 2;
+  const quoteFit = fitWrappedText(ctx, `\u201c${safeExperience}\u201d`, maxTextWidth, isTall ? 4 : 3, cqw * 3.6, cqw * 2.4);
+  const quoteLineHeight = quoteFit.fontSize * 1.12;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `900 ${quoteFit.fontSize}px Inter, Arial, sans-serif`;
+  for (const line of quoteFit.lines) {
+    ctx.fillText(line, textX, textY);
+    textY += quoteLineHeight;
+  }
+
+  textY += cqw * 2.2;
+  ctx.font = `900 ${cqw * 4}px Inter, Arial, sans-serif`;
+  ctx.fillText("Science Without Limits", textX, textY);
+  textY += cqw * 4.3;
+  ctx.fillText("Africa Without Borders", textX, textY);
+
+  textY += cqw * 5;
+  ctx.fillStyle = "rgba(255,255,255,0.76)";
+  ctx.font = `600 ${smallFont}px Inter, Arial, sans-serif`;
+  ctx.fillText("#scientiFRIKA2026  #ScienceWithoutLimits  #AfricaWithoutBorders", textX, textY, maxTextWidth);
+
+  return canvasToPngBlob(canvas);
 }
 
 export default function ScientifrikaExperience() {
@@ -134,7 +327,6 @@ export default function ScientifrikaExperience() {
   const notifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const exportRef = useRef<HTMLDivElement>(null);
 
   const activeFormat = useMemo(
     () => FORMATS.find((f) => f.key === formatKey) ?? FORMATS[0],
@@ -180,21 +372,6 @@ export default function ScientifrikaExperience() {
     updatePhoto(e.dataTransfer.files?.[0]);
   };
 
-  const captureFrameBlob = useCallback(async () => {
-    if (!exportRef.current) return null;
-
-    await waitForFrameAssets(exportRef.current);
-    return toBlob(exportRef.current, {
-      cacheBust: true,
-      pixelRatio: 1,
-      backgroundColor: "#111827",
-      width: activeFormat.width,
-      height: activeFormat.height,
-      canvasWidth: activeFormat.width,
-      canvasHeight: activeFormat.height,
-    });
-  }, [activeFormat]);
-
   const shareCaption = useMemo(
     () =>
       `I was part of Africa's biggest scientific gathering - scientiFRIKA 2026. ${experience} #scientiFRIKA2026 #ScienceWithoutLimits #AfricaWithoutBorders`,
@@ -208,19 +385,9 @@ export default function ScientifrikaExperience() {
       return;
     }
 
-    if (!exportRef.current) {
-      showNotify("Frame is not ready yet. Try again.");
-      return;
-    }
-
     setIsExporting(true);
     try {
-      const blob = await captureFrameBlob();
-      if (!blob) {
-        showNotify("Could not prepare the PNG. Try again.");
-        return;
-      }
-
+      const blob = await createFramePngBlob({ photoUrl, experience, format: activeFormat });
       downloadBlob(blob, `scientifrika-2026-${activeFormat.key}.png`);
       showNotify("PNG downloaded. Open a platform below and upload it there.");
     } catch {
@@ -235,7 +402,7 @@ export default function ScientifrikaExperience() {
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-[#111827]/90 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <Image src="/cropped-IMG-20251009-WA0008.webp" alt="scientiFRIKA" width={36} height={36} priority className="size-9 shrink-0 rounded-lg object-contain" />
+          <Image src={LOGO_SRC} alt="scientiFRIKA" width={36} height={36} priority className="size-9 shrink-0 rounded-lg object-contain" />
           <span className="truncate text-sm font-black tracking-normal text-white">scientiFRIKA 2026</span>
         </div>
         <a href="#create" className="flex cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/20">
@@ -415,12 +582,6 @@ export default function ScientifrikaExperience() {
         </div>
       )}
 
-      {/* Hidden export target */}
-      <div aria-hidden="true" className="pointer-events-none fixed left-[-1400px] top-0">
-        <div ref={exportRef} style={{ width: activeFormat.width, height: activeFormat.height }}>
-          <SocialFrame photoUrl={photoUrl} experience={experience} format={activeFormat} exportMode />
-        </div>
-      </div>
     </main>
   );
 }
@@ -450,9 +611,9 @@ function WhatsAppIcon({ className }: SocialIconProps) {
 }
 
 function SocialFrame({
-  photoUrl, experience, format, exportMode,
+  photoUrl, experience, format,
 }: {
-  photoUrl: string | null; experience: string; format: (typeof FORMATS)[number]; exportMode?: boolean;
+  photoUrl: string | null; experience: string; format: (typeof FORMATS)[number];
 }) {
   const isTall = format.height > format.width;
   const safeExperience = experience.trim() || "Exploring science without limits.";
@@ -460,13 +621,12 @@ function SocialFrame({
   return (
     <div
       className={cn("frame-shell w-full text-white", isTall ? "aspect-[9/16]" : "aspect-square")}
-      style={exportMode ? { width: format.width, height: format.height, aspectRatio: "auto" } : undefined}
     >
       <div className={cn("relative z-10 flex h-full flex-col", isTall ? "gap-[4cqw] p-[6cqw]" : "gap-[3cqw] p-[5cqw]")}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-[2cqw]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- Plain img is more reliable for html-to-image exports. */}
-            <img src="/cropped-IMG-20251009-WA0008.webp" alt="" className="size-[9cqw] min-h-9 min-w-9 rounded-md object-contain" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- Plain img keeps the preview aligned with canvas export assets. */}
+            <img src={LOGO_SRC} alt="" className="size-[9cqw] min-h-9 min-w-9 rounded-md object-contain" />
             <div className="flex flex-col">
               <span className="frame-small font-semibold uppercase text-white/72">scientiFRIKA</span>
               <span className="frame-copy font-black">scientiFRIKA 2026</span>
@@ -479,8 +639,8 @@ function SocialFrame({
 
         <div className={cn("relative overflow-hidden rounded-[3cqw] border border-white/18 bg-white/10 shadow-2xl shadow-black/35", isTall ? "min-h-0 flex-1" : "h-[50cqw]")}>
           {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- User-uploaded blob URLs need plain img rendering for reliable html-to-image exports.
-            <img src={photoUrl} alt="" className="absolute inset-0 size-full object-scale-down" />
+            // eslint-disable-next-line @next/next/no-img-element -- User-uploaded blob URLs render most reliably with plain img.
+            <img src={photoUrl} alt="" className="absolute inset-0 size-full object-contain" />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,rgba(216,27,96,0.72),rgba(123,31,162,0.84))]">
               <UploadCloud className="size-[6cqw]" />
