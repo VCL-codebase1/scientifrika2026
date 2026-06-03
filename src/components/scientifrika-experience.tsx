@@ -44,7 +44,7 @@ type FormatKey = (typeof FORMATS)[number]["key"];
 export default function ScientifrikaExperience() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [experience, setExperience] = useState(TAKEAWAYS[0]);
-  const [formatKey, setFormatKey] = useState<FormatKey>("linkedin");
+  const [formatKey, setFormatKey] = useState<FormatKey>("instagram");
   const [isDragging, setIsDragging] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
