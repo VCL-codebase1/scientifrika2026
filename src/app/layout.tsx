@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "scientiFRIKA 2026 – Badge Generator",
-  description: "Generate your participation badge for LinkedIn, Instagram, and WhatsApp.",
+  title: "scientiFRIKA 2026 – Frame Creator",
+  description: "Create your participation frame for LinkedIn, Instagram, and WhatsApp.",
 };
 
 export const viewport: Viewport = {

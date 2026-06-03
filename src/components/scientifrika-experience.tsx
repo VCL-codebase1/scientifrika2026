@@ -18,7 +18,6 @@ import {
   Instagram,
   Linkedin,
   MessageCircle,
-  Replace,
   Share2,
   UploadCloud,
 } from "lucide-react";
@@ -175,7 +174,7 @@ export default function ScientifrikaExperience() {
         </div>
         <a href="#create" className="flex cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/20">
           <ImagePlus className="size-3.5" />
-          Generate
+          Create
         </a>
       </header>
 
@@ -186,17 +185,17 @@ export default function ScientifrikaExperience() {
             I Was Part of Africa&apos;s Biggest Scientific Gathering
           </h1>
           <p className="mt-3 text-base font-semibold text-slate-300">Science Without Limits. Africa Without Borders.</p>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Upload your photo, pick your takeaway, and generate a badge for LinkedIn, Instagram, or WhatsApp.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Upload your photo, pick your takeaway, and create your frame for LinkedIn, Instagram, or WhatsApp.</p>
           <a href="#create" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-magenta px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-transform active:scale-95">
             <ImagePlus className="size-4" />
-            Generate My Badge
+            Create My Frame
           </a>
         </div>
       </section>
 
       {/* Create */}
       <section id="create" className="bg-[#f8fafc] px-4 pb-10 pt-8 text-[#111827]">
-        <div className="mx-auto flex max-w-lg flex-col gap-5">
+        <div className="mx-auto flex max-w-lg flex-col gap-4">
           {/* Upload */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
             <h2 className="flex items-center gap-2 text-sm font-bold">
@@ -222,7 +221,7 @@ export default function ScientifrikaExperience() {
               )}
             >
               {photoUrl ? (
-                <img src={photoUrl} alt="" className="h-40 w-full rounded-lg object-cover shadow-inner" />
+                <img src={photoUrl} alt="" className="h-40 w-full rounded-lg object-scale-down bg-slate-800 shadow-inner" />
               ) : (
                 <>
                   <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -236,13 +235,13 @@ export default function ScientifrikaExperience() {
               )}
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button type="button" variant="magenta" size="sm" onClick={() => fileInputRef.current?.click()}>
-                <Replace className="size-3.5" />
-                {photoUrl ? "Replace" : "Choose"}
-              </Button>
-              <button type="button" onClick={() => cameraInputRef.current?.click()} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100">
-                <Camera className="size-3.5" />
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl bg-magenta px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all active:scale-[0.97]">
+                <ImagePlus className="size-4" />
+                {photoUrl ? "Replace" : "Upload"}
+              </button>
+              <button type="button" onClick={() => cameraInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border-2 border-primary/20 bg-primary/5 px-4 py-3 text-sm font-bold text-primary shadow-sm transition-all active:scale-[0.97]">
+                <Camera className="size-4" />
                 Camera
               </button>
             </div>
@@ -251,7 +250,7 @@ export default function ScientifrikaExperience() {
           {/* Preview + Download */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold">Your Badge</h2>
+              <h2 className="text-sm font-bold">Your Frame</h2>
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">HD Export</span>
             </div>
 
@@ -293,24 +292,24 @@ export default function ScientifrikaExperience() {
               {isExporting ? "Preparing..." : "Download PNG"}
             </Button>
 
-            <div className="mt-2 grid grid-cols-4 gap-2">
-              <button type="button" onClick={shareToX} disabled={!photoUrl} className="flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-1 py-2 text-[10px] font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-40">
-                <svg viewBox="0 0 24 24" className="size-3 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              <button type="button" onClick={shareToX} disabled={!photoUrl} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40">
+                <svg viewBox="0 0 24 24" className="size-3.5 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 X
               </button>
-              <button type="button" onClick={shareToInstagram} disabled={!photoUrl || isExporting} className="flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-1 py-2 text-[10px] font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-40">
-                <Instagram className="size-3" />
-                IG
+              <button type="button" onClick={shareToInstagram} disabled={!photoUrl || isExporting} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40">
+                <Instagram className="size-3.5" />
+                Instagram
               </button>
-              <button type="button" onClick={shareToFacebook} disabled={!photoUrl} className="flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-1 py-2 text-[10px] font-bold text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-40">
-                <svg viewBox="0 0 24 24" className="size-3 fill-current"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                FB
-              </button>
-              <button type="button" onClick={shareFrame} disabled={!photoUrl || isExporting} className="flex items-center justify-center gap-1 rounded-lg bg-[#111827] px-1 py-2 text-[10px] font-bold text-white transition-colors hover:bg-[#1e293b] disabled:opacity-40">
-                <Share2 className="size-3" />
-                Share
+              <button type="button" onClick={shareToFacebook} disabled={!photoUrl} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-100 active:scale-[0.97] disabled:opacity-40">
+                <svg viewBox="0 0 24 24" className="size-3.5 fill-current"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                Facebook
               </button>
             </div>
+            <button type="button" onClick={shareFrame} disabled={!photoUrl || isExporting} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#1e293b] active:scale-[0.97] disabled:opacity-40">
+              <Share2 className="size-4" />
+              Share to Social Media
+            </button>
           </div>
 
           {/* Takeaway */}
@@ -396,7 +395,7 @@ function SocialFrame({
 
         <div className={cn("relative overflow-hidden rounded-[3cqw] border border-white/18 bg-white/10 shadow-2xl shadow-black/35", isTall ? "min-h-0 flex-1" : "h-[50cqw]")}>
           {photoUrl ? (
-            <img src={photoUrl} alt="" className="absolute inset-0 size-full object-cover" />
+            <img src={photoUrl} alt="" className="absolute inset-0 size-full object-scale-down" />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,rgba(216,27,96,0.72),rgba(123,31,162,0.84))]">
               <UploadCloud className="size-[6cqw]" />
